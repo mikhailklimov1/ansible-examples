@@ -1,0 +1,30 @@
+---
+- name: Error handling
+  hosts: all
+  tasks:
+
+  - name: Get process id
+    community.general.pids:
+      pattern: "some_process@{{ ansible_facts['default_ipv4']['address'] }}"
+    register: process_pid
+
+  - name: Debug process id
+    debug:
+      msg: "Main process ID for some_process is {{ process_pid }}"
+
+  - name: Try to restart PRS
+    block:
+    - name: Try restart w systemd
+      ansible.builtin.systemd:
+        name: "some_process@{{ ansible_facts['default_ipv4']['address'] }}"
+        scope: user
+        state: restarted
+        enabled: true
+    rescue:
+    - name: Try shell w kill command
+      shell:
+        cmd: "kill -s 9 {{ process_pid['pids'][0] }}"
+    always:
+    - name: Debug a kill command
+      debug:
+        msg: "kill -s 9 {{ process_pid['pids'][0] }}"
