@@ -25,6 +25,9 @@
       shell:
         cmd: "kill -s 9 {{ process_pid['pids'][0] }}"
     always:
-    - name: Debug a kill command
-      debug:
-        msg: "kill -s 9 {{ process_pid['pids'][0] }}"
+    - name: Verify service is up and running
+      ansible.builtin.systemd:
+        name: "some_process@{{ ansible_facts['default_ipv4']['address'] }}"
+        scope: user
+        state: started
+        enabled: true
