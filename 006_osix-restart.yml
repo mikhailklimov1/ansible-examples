@@ -1,0 +1,102 @@
+---
+- name: Test PRS restart
+  hosts: all
+
+  tasks:
+
+  - name: PRS restart
+  
+    block:
+    
+    - name: Try to restart PRS w systemd
+      ansible.builtin.systemd:
+        name: "osix-prs@{{ inventory_hostname }}"
+        state: restarted
+        enabled: true
+        
+    rescue:
+    
+    - name: Get a PID for osix-prs processes
+      ansible.builtin.shell:
+        cmd: ps aux | grep -Ei '{{ inventory_hostname }} -g gls' | grep -v 'grep' | awk '{print $2}'
+      register: prs_pid
+      
+    - name: Debug PID for osix-prs
+      ansible.builtin.debug:
+        msg: "{{ prs_pid['stdout'] }}"
+        
+    - name: Try shell w kill command
+      ansible.builtin.shell:
+        cmd: "kill -s 9 {{ prs_pid['stdout'] }}"
+        
+    - name: Run cleanmdm
+      ansible.builtin.shell:
+        cmd: "osixctrl2 cleanmdm prs {{ inventory_hostname }}"
+        
+    always:
+    
+    - name: Check if PRS is up and running
+      ansible.builtin.systemd:
+        name: "osix-prs@{{ inventory_hostname }}"
+        state: started
+        enabled: true
+        
+        
+---
+- name: Test PRS restart
+  hosts: all
+  tasks:
+
+  - name: Populate ansible_facts w service information
+    ansible.builtin.service_facts:
+
+#  - name: Printing the facts
+#    ansible.builtin.debug:
+#      msg: "{{ ansible_facts.services|to_nice_json }}"
+
+  - name: Debug osix service info
+    ansible.builtin.debug:
+      msg: "{{ ansible_facts['services']['osix-prs@10.15.27.150.service']['state'] }}"
+    register: osix_state
+  - name: Debug the name for element
+    ansible.builtin.debug:
+      msg: "{{ osix_state['msg'] }}"
+#    loop: "{{ lookup('dict', xinetd.service) }}"
+#    when:
+#  - name: Debug osix some message if service is stopped
+#    ansible.builtin.debug:
+#      msg: "Hallochen!"
+#    when: ansible_facts['services']['osix-prs@10.15.27.150.service']['state'] == "stopped"
+#  - name: Debug inventory_hostname
+#    ansible.builtin.debug:
+#      msg: "{{ inventory_hostname }}"
+#  - name: Debug osix some message if service is stopped
+#    ansible.builtin.debug:
+#      msg: "Hallochen-2!"
+#    when: ansible_facts['services']['osix-prs@{{ inventory_hostname }}.service']['state'] == "stopped"
+#  - name: Set osix state
+#    ansible.builtin.set_fact:
+#      osix_state: "ansible_facts['services']['osix-prs@{{ inventory_hostname }}.service']['state']"
+#  - name: Debug the name for element
+#    ansible.builtin.debug:
+#      msg: "{{ osix_state }}"
+  - name: Debug osix some message if service is stopped
+    ansible.builtin.debug:
+      msg: "Hallochen-2!"
+    when: osix_state['msg'] == "stopped"
+
+
+---
+- name: Test PRS restart
+  hosts: all
+  tasks:
+  - name: Populate ansible_facts w service information
+    ansible.builtin.service_facts:
+  - name: Debug osix service info
+    ansible.builtin.debug:
+      msg: "{{ ansible_facts['services']['osix-prs@10.15.27.150.service']['state'] }}"
+    register: osix_state
+  - name: Debug osix some message if service is stopped
+    ansible.builtin.debug:
+      msg: "OSIX service on {{ inventory_hostname }} is stopped"
+    when: osix_state['msg'] == "stopped"
