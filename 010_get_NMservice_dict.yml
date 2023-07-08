@@ -1,0 +1,15 @@
+---
+- name: Manage services
+  hosts: ansible1
+  vars:
+    service_name: "NetworkManager.service"
+
+  tasks:
+  - name: Populate ansible_facts w service information
+    ansible.builtin.service_facts:
+
+  - name: Debug all services
+    ansible.builtin.debug:
+      msg: "{{ item }}"
+    loop: "{{ lookup('dict', ansible_facts['services']) }}"
+    when: item.key in service_name
