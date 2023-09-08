@@ -1,0 +1,13 @@
+---
+- hosts: all
+  name: run a nmap to check if the port on GLS is open
+  tasks:
+  - name: nmap command
+    shell:
+      cmd: "sudo nmap -p 389 <ldap server addess>"
+    register: output
+  - name: show results
+    debug:
+      var: item
+    loop: "{{ output.stdout_lines }}"
+    when: '"tcp" in item'
